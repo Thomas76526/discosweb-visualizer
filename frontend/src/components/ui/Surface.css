@@ -1,0 +1,29 @@
+/*
+ * Surface — the layer cake primitive.
+ * No shadows; depth is conveyed through background lightness.
+ */
+
+.surface {
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-fast) var(--ease-out-expo);
+}
+
+.surface--e0 {
+  background: var(--bg-canvas);
+}
+
+.surface--e1 {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.surface--e2 {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+.surface--flush {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+}

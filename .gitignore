@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+__pycache__/
+.venv/
+venv/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.turbo/
+.parcel-cache/
+.cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+.cursor/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Local uploads (user data, not source)
+uploads/
+tmp/
+.tmp/
+
+# R1 / F-13: 运行时数据(DuckDB / 上传文件)不进 git
+# 保留 .gitkeep 以确保目录结构存在
+data/runtime/*
+!data/runtime/.gitkeep
+

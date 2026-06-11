@@ -1,0 +1,97 @@
+/*
+ * Design tokens — Discosweb Visualizer
+ *
+ * Layered color system using OKLCH for perceptually uniform surfaces:
+ *   canvas  <  surface  <  elevated  <  overlay
+ *
+ * No layout-shadow layering: depth comes from lightness, not blur.
+ * No uniform radius: sm=6 (controls), md=10 (cards), lg=16 (modals).
+ */
+
+:root {
+  /* Surface scale — dark workbench */
+  --bg-canvas:        oklch(15% 0.01 250);
+  --bg-surface:       oklch(20% 0.01 250);
+  --bg-elevated:      oklch(25% 0.01 250);
+  --bg-overlay:       oklch(10% 0.01 250 / 0.7);
+
+  /* Borders — keep contrast low, density high */
+  --border-subtle:    oklch(28% 0.01 250);
+  --border:           oklch(35% 0.01 250);
+  --border-strong:    oklch(45% 0.01 250);
+
+  /* Text — 3 levels of hierarchy */
+  --text-primary:     oklch(95% 0 0);
+  --text-secondary:   oklch(75% 0.01 250);
+  --text-muted:       oklch(55% 0.01 250);
+  --text-disabled:    oklch(40% 0.01 250);
+
+  /* Accent — used semantically: focus, primary action, selection */
+  --accent:           oklch(72% 0.18 230);
+  --accent-hover:     oklch(78% 0.18 230);
+  --accent-press:     oklch(66% 0.18 230);
+  --accent-soft:      oklch(72% 0.18 230 / 0.15);
+  --accent-ring:      oklch(72% 0.18 230 / 0.55);
+
+  /* Semantic — status colors are reserved, never decorative */
+  --success:          oklch(75% 0.18 145);
+  --success-soft:     oklch(75% 0.18 145 / 0.18);
+  --warn:             oklch(80% 0.16 75);
+  --warn-soft:        oklch(80% 0.16 75 / 0.18);
+  --danger:           oklch(65% 0.22 25);
+  --danger-hover:     oklch(70% 0.22 25);
+  --danger-soft:      oklch(65% 0.22 25 / 0.18);
+
+  /* Series palette — readable on dark, ordered by perceptual distance */
+  --series-1:         oklch(72% 0.18 230);
+  --series-2:         oklch(75% 0.18 145);
+  --series-3:         oklch(80% 0.16 75);
+  --series-4:         oklch(65% 0.22 25);
+  --series-5:         oklch(70% 0.18 310);
+  --series-6:         oklch(78% 0.14 195);
+
+  /* Radius — intentionally varied, not uniform */
+  --radius-xs:        4px;
+  --radius-sm:        6px;     /* buttons, inputs, toggles */
+  --radius-md:        10px;    /* cards, surfaces */
+  --radius-lg:        16px;    /* modals, popovers */
+
+  /* Spacing — 8px base scale */
+  --space-0:          0;
+  --space-1:          8px;
+  --space-2:          12px;
+  --space-3:          16px;
+  --space-4:          24px;
+  --space-5:          32px;
+  --space-6:          48px;
+  --space-7:          64px;
+
+  /* Motion */
+  --duration-fast:    150ms;
+  --duration-normal:  300ms;
+  --duration-slow:    500ms;
+  --ease-out-expo:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:      cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Type — display for UI, mono for numbers/code */
+  --font-display:     'Inter', system-ui, -apple-system, 'PingFang SC', sans-serif;
+  --font-mono:        'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  /* Type scale */
+  --text-xs:          11px;
+  --text-sm:          12px;
+  --text-base:        13px;
+  --text-md:          14px;
+  --text-lg:          16px;
+  --text-xl:          20px;
+  --text-2xl:         24px;
+  --text-display:     32px;
+
+  /* Layout */
+  --topbar-h:         56px;
+  --sidebar-w:        240px;
+  --configpanel-w:    320px;
+
+  /* Focus ring — single source of truth */
+  --focus-ring:       0 0 0 2px var(--accent-ring), 0 0 0 4px var(--bg-canvas);
+}

@@ -1,0 +1,89 @@
+# 一键启动前后端: docker compose up
+# 前端: http://localhost:5173
+# 后端: http://localhost:8000/docs
+#
+# 修复记录(对应 code-review / security-review 报告):
+#   C-1:  frontend/Dockerfile 已创建
+#   C-2 / F-07: env_prefix="APP_" → compose 同步用 APP_ 前缀
+#   F-02: 容器以非 root 用户运行
+#   F-03: read_only + no-new-privileges + cap_drop + mem_limit + cpus + healthcheck
+#   F-04: Vite 通过 /api 代理 → backend,不再用 VITE_API_BASE 字面量
+#   R1 / F-13: data 拆为 sample:ro + runtime:rw 命名卷,backend 默认写 runtime/
+#   R3:  depends_on 加 condition: service_healthy,等 backend healthcheck 通过再启前端
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: discosweb-frontend:dev
+    container_name: discosweb-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      # Vite 通过 vite.config.ts 的 proxy 把 /api/* 转发到 backend:8000
+      # 这里不再需要 VITE_API_BASE
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - "ALL"
+    mem_limit: 384m
+    cpus: "0.5"
+    # R3 修复:等 backend healthcheck 通过后再启动,避免冷启动 502
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - discosweb-net
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: discosweb-backend:dev
+    container_name: discosweb-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - ENV=development
+      # 修 F-07: Pydantic env_prefix="APP_",compose 必须用 APP_ 前缀
+      # 这里给默认值; .env 文件可覆盖
+      - APP_CORS_ORIGINS=["http://localhost:5173"]
+    volumes:
+      # R1 / F-13 修复:data 拆为只读样本 + 运行时可写
+      - ./data/sample:/app/data/sample:ro
+      - db-data:/app/data/runtime:rw
+    # F-03 修复:容器根文件系统只读
+    read_only: true
+    tmpfs:
+      # read_only 后,/tmp 也要走 tmpfs
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - "ALL"
+    mem_limit: 512m
+    cpus: "1.0"
+    # F-03 修复:容器层 healthcheck(Dockerfile 中也有 HEALTHCHECK,这里是双保险)
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - discosweb-net
+    restart: unless-stopped
+
+networks:
+  discosweb-net:
+    driver: bridge
+
+# R1 / F-13 修复:运行时数据用命名卷,容器销毁数据不丢
+volumes:
+  db-data:
+    driver: local
