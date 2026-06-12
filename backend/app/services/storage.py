@@ -17,6 +17,9 @@ import polars as pl
 # all user-supplied strings (dataset ids, field names) to this safe set.
 _SAFE_IDENT = re.compile(r"[^A-Za-z0-9_]")
 
+# H-10 修复:前置过滤 NULL / 控制字符,避免流向 DuckDB 标识符解析器
+_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
+
 
 def _safe_ident(s: str) -> str:
     """Sanitize a string for use as a SQL identifier (table or column name)."""
@@ -27,7 +30,16 @@ def _safe_ident(s: str) -> str:
 
 
 def _quote(s: str) -> str:
-    """Wrap an identifier in double quotes for safe SQL composition."""
+    """Wrap an identifier in double quotes for safe SQL composition.
+
+    Raises:
+        ValueError: if `s` contains control characters (NULL, newlines, etc.)
+            that could confuse the SQL parser or downstream tooling.
+    """
+    if _CONTROL_CHARS.search(s):
+        raise ValueError(
+            f"Identifier contains control characters (rejected): {s!r}"
+        )
     return '"' + s.replace('"', '""') + '"'
 
 

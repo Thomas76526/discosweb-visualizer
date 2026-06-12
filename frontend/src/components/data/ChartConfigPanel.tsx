@@ -5,11 +5,14 @@ import { useDatasetStore } from '../../store/dataset';
 import type { Aggregation, ChartType } from '../../types/api';
 import './ChartConfigPanel.css';
 
-const CHART_TYPES: { value: ChartType; label: string }[] = [
-  { value: 'bar', label: '柱状图' },
-  { value: 'line', label: '折线图' },
-  { value: 'scatter', label: '散点图' },
-  { value: 'pie', label: '饼图' },
+const CHART_TYPES: { value: ChartType; label: string; enabled: boolean }[] = [
+  // CRITICAL-1 修复:M1 暂不接 ScatterChart / PieChart 组件,
+  // 但 makeScatterOption / makePieOption 工厂已实现(echarts-theme.ts)
+  // 等 M1.5 加 ScatterChart / PieChart 组件后,把 enabled 改 true 即可
+  { value: 'bar', label: '柱状图', enabled: true },
+  { value: 'line', label: '折线图', enabled: true },
+  { value: 'scatter', label: '散点图 (M1.5)', enabled: false },
+  { value: 'pie', label: '饼图 (M1.5)', enabled: false },
 ];
 
 const AGGREGATIONS: { value: Aggregation; label: string }[] = [
@@ -26,11 +29,14 @@ export function ChartConfigPanel() {
   const setChartPreview = useDatasetStore((s) => s.setChartPreview);
   const setLoading = useDatasetStore((s) => s.setLoading);
   const setError = useDatasetStore((s) => s.setError);
+  // CRITICAL-1 修复:chartType 现在从 store 读 / 写,
+  // 让 App 的 ChartPreviewRenderer 能直接 dispatch 到对应的组件
+  const chartType = useDatasetStore((s) => s.chartType);
+  const setChartType = useDatasetStore((s) => s.setChartType);
   const isLoading = useDatasetStore((s) => s.isLoading);
 
   const fields = profile ?? dataset?.fields ?? [];
 
-  const [chartType, setChartType] = useState<ChartType>('bar');
   const [xField, setXField] = useState<string>('');
   const [yField, setYField] = useState<string>('');
   const [groupBy, setGroupBy] = useState<string>('');
@@ -87,10 +93,17 @@ export function ChartConfigPanel() {
             id="chart-type"
             className="config-panel-input"
             value={chartType}
-            onChange={(e) => setChartType(e.target.value as ChartType)}
+            onChange={(e) => {
+              const next = e.target.value as ChartType;
+              // 只在 enabled 的选项中切换;若用户选未实现的类型,保持当前值
+              const opt = CHART_TYPES.find((t) => t.value === next);
+              if (opt?.enabled) setChartType(next);
+            }}
           >
             {CHART_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+              <option key={t.value} value={t.value} disabled={!t.enabled}>
+                {t.label}
+              </option>
             ))}
           </select>
         </div>

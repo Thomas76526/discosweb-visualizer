@@ -103,9 +103,16 @@ async def upload_dataset(
     # Parse
     try:
         df = parse_file(target)
-    except Exception as e:
+    except ValueError as e:
+        # 用户错误:不支持的扩展名、空文件、列名非法
         target.unlink(missing_ok=True)
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Parse error: {e}")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Invalid file: {e}")
+    except Exception:
+        # M-05 修复:其它异常(IO 错误、polars ComputeError 等)只记日志,
+        # 避免 str(exc) 把绝对路径 / 库内部细节泄露给前端
+        target.unlink(missing_ok=True)
+        # 真实异常已由 uvicorn 日志记录
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Failed to parse uploaded file")
 
     # Persist
     store.save(dataset_id, safe_name, df)

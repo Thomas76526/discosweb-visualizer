@@ -35,7 +35,8 @@ class TestUpload:
             "/api/datasets/upload",
             files={"file": ("test.csv", io.BytesIO(csv_content), "text/csv")},
         )
-        assert r.status_code == 200, r.text
+        # CRITICAL-2 修复:路由声明 201 Created,不是 200
+        assert r.status_code == 201, r.text
         body = r.json()
         assert body["name"] == "test.csv"
         assert body["rows"] == 2
@@ -86,8 +87,8 @@ class TestUpload:
             "/api/datasets/upload",
             files={"file": ("../../../etc/passwd.csv", io.BytesIO(csv_content), "text/csv")},
         )
-        # Should succeed but with sanitized name
-        assert r.status_code == 200
+        # Should succeed but with sanitized name (CRITICAL-2 修复:201 Created)
+        assert r.status_code == 201
         body = r.json()
         # Filename should be the basename only, no ".."
         assert ".." not in body["name"]
@@ -183,7 +184,8 @@ class TestFromSample:
     def test_from_sample_loads_builtin(self, client: TestClient) -> None:
         # The sample data lives in /data/sample/sample-sales-2025.csv relative to repo root
         r = client.post("/api/datasets/from-sample")
-        assert r.status_code == 200, r.text
+        # CRITICAL-2 修复:路由声明 201 Created
+        assert r.status_code == 201, r.text
         body = r.json()
         assert body["rows"] == 200
         assert "date" in [f["name"] for f in body["fields"]]

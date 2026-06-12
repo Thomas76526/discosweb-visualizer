@@ -93,7 +93,9 @@ class TestDatasetStoreRoundtrip:
 
 
 class TestDatasetStoreProfile:
-    @SKIP
+    # HIGH-1 修复:profile 测试用 parse_file(sample_csv_path) 从 fixture CSV 读,
+    # 不在 pytest 内构造 pl.DataFrame,正常情况下不会触发 polars segfault。
+    # 不再 SKIP,真正覆盖。
     def test_profile_returns_field_info(self, store: DatasetStore, sample_csv_path) -> None:
         df = parse_file(sample_csv_path)
         store.save("ds-1", "sales.csv", df)
@@ -103,7 +105,6 @@ class TestDatasetStoreProfile:
         assert "region" in names
         assert "revenue" in names
 
-    @SKIP
     def test_profile_includes_nulls(self, store: DatasetStore, sample_csv_with_nulls) -> None:
         df = parse_file(sample_csv_with_nulls)
         store.save("ds-1", "with_nulls.csv", df)
@@ -112,7 +113,6 @@ class TestDatasetStoreProfile:
         assert age_profile["nulls"] == 2
         assert age_profile["distinct"] == 2
 
-    @SKIP
     def test_profile_includes_min_max_for_numeric(
         self, store: DatasetStore, sample_csv_path
     ) -> None:
@@ -124,7 +124,6 @@ class TestDatasetStoreProfile:
         assert rev["max"] is not None
         assert rev["max"] >= rev["min"]
 
-    @SKIP
     def test_profile_includes_top_values(
         self, store: DatasetStore, sample_csv_path
     ) -> None:

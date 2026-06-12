@@ -57,12 +57,19 @@ async def health() -> dict[str, str]:
 
 
 # 统一错误响应(envelope 格式与前端 api/client.ts 对齐)
+# M-05 修复:不把 str(exc) 透传给前端,避免泄露绝对路径 / 库内部异常
 @app.exception_handler(Exception)
 async def unhandled_exception(_: Request, exc: Exception) -> JSONResponse:
-    # 让 HTTPException 由 FastAPI 默认处理;其它异常包成 envelope
     if hasattr(exc, "status_code"):
         raise exc
+    # 真实异常已由日志中间件/uvicorn 记录,这里只回 envelope
     return JSONResponse(
         status_code=500,
-        content={"data": None, "error": {"message": str(exc), "code": "INTERNAL"}},
+        content={
+            "data": None,
+            "error": {
+                "message": "Internal server error",
+                "code": "INTERNAL",
+            },
+        },
     )

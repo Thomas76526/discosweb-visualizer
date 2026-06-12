@@ -14,6 +14,9 @@ function App() {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const current = useDatasetStore((s) => s.current);
   const chartPreview = useDatasetStore((s) => s.chartPreview);
+  // CRITICAL-1 修复:用 store 里的 chartType dispatch 渲染,
+  // 不再用 series.length 启发式
+  const chartType = useDatasetStore((s) => s.chartType);
 
   return (
     <div className="app-shell">
@@ -65,7 +68,7 @@ function App() {
             </div>
             <div className="canvas-chart">
               {chartPreview ? (
-                <ChartPreviewRenderer series={chartPreview.series} />
+                <ChartPreviewRenderer series={chartPreview.series} chartType={chartType} />
               ) : (
                 <div className="canvas-empty">
                   <p>暂无图表 — 在右侧配置后点击「生成图表」</p>
@@ -84,17 +87,23 @@ function App() {
 }
 
 /**
- * Render the first appropriate chart for the current chartType context.
- * For M1 we just alternate between line and bar based on series count;
- * the chart type is set in the config panel and applied at render time.
+ * Render the chart preview using the user's selected chart type.
+ * CRITICAL-1 修复:严格按 store.chartType dispatch,
+ * 不再用 series.length 启发式。
+ *
+ * M1.5: 添加 ScatterChart / PieChart 组件后,这个 switch 就能覆盖全 4 种类型。
  */
-function ChartPreviewRenderer({ series }: { series: ChartPreview['series'] }) {
-  // Simple heuristic: if there's only 1 series, line; otherwise bar.
-  // The real chart type selection happens in ChartConfigPanel.
-  if (series.length <= 1) {
-    return <LineChart series={series} height={420} />;
+function ChartPreviewRenderer({
+  series,
+  chartType,
+}: {
+  series: ChartPreview['series'];
+  chartType: 'bar' | 'line';
+}) {
+  if (chartType === 'bar') {
+    return <BarChart series={series} height={420} ariaLabel="Bar chart" />;
   }
-  return <BarChart series={series} height={420} />;
+  return <LineChart series={series} height={420} ariaLabel="Line chart" />;
 }
 
 export default App;
