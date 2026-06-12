@@ -6,7 +6,9 @@ import { FieldPanel } from './components/data/FieldPanel';
 import { ChartConfigPanel } from './components/data/ChartConfigPanel';
 import { LineChart } from './components/charts/LineChart';
 import { BarChart } from './components/charts/BarChart';
-import type { ChartPreview } from './types/api';
+import { ScatterChart } from './components/charts/ScatterChart';
+import { PieChart } from './components/charts/PieChart';
+import type { ChartPreview, ChartType } from './types/api';
 import './App.css';
 
 function App() {
@@ -88,22 +90,26 @@ function App() {
 
 /**
  * Render the chart preview using the user's selected chart type.
- * CRITICAL-1 修复:严格按 store.chartType dispatch,
- * 不再用 series.length 启发式。
- *
- * M1.5: 添加 ScatterChart / PieChart 组件后,这个 switch 就能覆盖全 4 种类型。
+ * M1.5: 覆盖全部 4 种图(bar / line / scatter / pie),
+ * 严格按 store.chartType dispatch。
  */
 function ChartPreviewRenderer({
   series,
   chartType,
 }: {
   series: ChartPreview['series'];
-  chartType: 'bar' | 'line';
+  chartType: ChartType;
 }) {
-  if (chartType === 'bar') {
-    return <BarChart series={series} height={420} ariaLabel="Bar chart" />;
+  switch (chartType) {
+    case 'bar':
+      return <BarChart series={series} height={420} ariaLabel="Bar chart" />;
+    case 'line':
+      return <LineChart series={series} height={420} ariaLabel="Line chart" />;
+    case 'scatter':
+      return <ScatterChart series={series} height={420} ariaLabel="Scatter chart" />;
+    case 'pie':
+      return <PieChart series={series} height={420} ariaLabel="Pie chart" />;
   }
-  return <LineChart series={series} height={420} ariaLabel="Line chart" />;
 }
 
 export default App;

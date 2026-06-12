@@ -128,50 +128,66 @@ class DatasetStore:
         return {"id": row[0], "name": row[1], "rows": row[2]}
 
     def get_table(self, dataset_id: str) -> pl.DataFrame:
-        table_name = self._table_name(dataset_id)
+        table_name = self.get_table_name(dataset_id)
         arrow_table = self.conn.execute(
             f"SELECT * FROM {_quote(table_name)}"
+        ).arrow()
+        return pl.from_arrow(arrow_table)
+
+    def head(self, dataset_id: str, n: int = 5) -> pl.DataFrame:
+        """Return the first `n` rows of the dataset (MED-3: avoid full table scan).
+
+        Uses `LIMIT n` so 50MB uploads don't get fully loaded just to display
+        a 5-row sample in the API response.
+        """
+        if n < 0:
+            raise ValueError(f"n must be non-negative, got {n}")
+        table_name = self.get_table_name(dataset_id)
+        arrow_table = self.conn.execute(
+            f"SELECT * FROM {_quote(table_name)} LIMIT {int(n)}"
         ).arrow()
         return pl.from_arrow(arrow_table)
 
     # ---------------- profile ----------------
 
     def profile(self, dataset_id: str) -> list[dict[str, Any]]:
-        table_name = self._table_name(dataset_id)
+        """Compute per-field statistics.
+
+        HIGH-3 修复:从 1+5N queries 降到 1+2N queries:
+          - 1 × DESCRIBE (column metadata)
+          - 1 × conditional-aggregate SELECT per column (nulls, distinct, min, max)
+          - 1 × top-5 SELECT per column (separate because GROUP BY can't be folded in)
+        """
+        table_name = self.get_table_name(dataset_id)
         col_info = self.conn.execute(f"DESCRIBE {_quote(table_name)}").fetchall()
         # DESCRIBE returns: column_name, column_type, null, key, default, extra
         result: list[dict[str, Any]] = []
         for name, dtype, *_ in col_info:
             safe = _quote(name)
-            nulls = self.conn.execute(
-                f"SELECT COUNT(*) - COUNT({safe}) FROM {_quote(table_name)}"
-            ).fetchone()[0]
-            distinct = self.conn.execute(
-                f"SELECT COUNT(DISTINCT {safe}) FROM {_quote(table_name)}"
-            ).fetchone()[0]
+            # One SELECT with conditional aggregates for nulls/distinct/min/max
+            stats_row = self.conn.execute(
+                f"""
+                SELECT
+                  COUNT(*) - COUNT({safe})                AS nulls,
+                  COUNT(DISTINCT {safe})                  AS distinct,
+                  MIN({safe})                             AS min_v,
+                  MAX({safe})                             AS max_v
+                FROM {_quote(table_name)}
+                """
+            ).fetchone()
+            nulls, distinct, min_v, max_v = stats_row
 
             entry: dict[str, Any] = {
                 "name": name,
                 "type": dtype,
                 "nulls": nulls,
                 "distinct": distinct,
+                "min": min_v,
+                "max": max_v,
                 "top": [],
             }
 
-            # Numeric columns get min/max
-            dtype_upper = dtype.upper()
-            if any(
-                t in dtype_upper
-                for t in ("INT", "FLOAT", "DOUBLE", "DECIMAL", "REAL", "NUMERIC")
-            ):
-                entry["min"] = self.conn.execute(
-                    f"SELECT MIN({safe}) FROM {_quote(table_name)}"
-                ).fetchone()[0]
-                entry["max"] = self.conn.execute(
-                    f"SELECT MAX({safe}) FROM {_quote(table_name)}"
-                ).fetchone()[0]
-
-            # Top 5 most common values
+            # Top 5 most common values (separate query — can't be folded)
             top_rows = self.conn.execute(
                 f"""
                 SELECT {safe} AS v, COUNT(*) AS c
@@ -188,15 +204,18 @@ class DatasetStore:
 
     # ---------------- internals ----------------
 
-    def _table_name(self, dataset_id: str) -> str:
-        if not self.exists(dataset_id):
-            raise KeyError(f"Dataset not found: {dataset_id}")
+    def get_table_name(self, dataset_id: str) -> str:
+        """Return the underlying DuckDB table name for a dataset.
+
+        HIGH-2 修复:public 方法,1 个 round-trip,raise KeyError if missing。
+        取代之前的 _table_name 私有方法(那个做 2 次查询:exists + 查表名)。
+        """
         row = self.conn.execute(
             "SELECT table_name FROM _dataset_tables WHERE dataset_id = ?",
             [dataset_id],
         ).fetchone()
-        if row is None:  # pragma: no cover — defensive
-            raise KeyError(f"Dataset table missing: {dataset_id}")
+        if row is None:
+            raise KeyError(f"Dataset not found: {dataset_id}")
         return row[0]
 
 
@@ -225,7 +244,9 @@ def aggregate(
     if not store.exists(dataset_id):
         raise KeyError(f"Dataset not found: {dataset_id}")
 
-    table_name = store._table_name(dataset_id)
+    # HIGH-2 修复:直接用 public get_table_name (单 round-trip),
+    # 之前的实现走了 exists() + _table_name() = 2 queries
+    table_name = store.get_table_name(dataset_id)
     agg_fn = {
         "sum": "SUM",
         "avg": "AVG",

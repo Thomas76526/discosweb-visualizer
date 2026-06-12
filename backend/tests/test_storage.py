@@ -138,6 +138,59 @@ class TestDatasetStoreProfile:
             store.profile("does-not-exist")
 
 
+class TestDatasetStoreHead:
+    """MED-3: store.head(n) should LIMIT-n, not full-scan."""
+
+    def test_head_returns_n_rows(self, store: DatasetStore, sample_csv_path) -> None:
+        df = parse_file(sample_csv_path)
+        store.save("ds-1", "sales.csv", df)
+        head = store.head("ds-1", n=3)
+        assert head.height == 3
+        assert set(head.columns) == set(df.columns)
+
+    def test_head_default_is_5(self, store: DatasetStore, sample_csv_path) -> None:
+        df = parse_file(sample_csv_path)
+        store.save("ds-1", "sales.csv", df)
+        assert store.head("ds-1").height == min(5, df.height)
+
+    def test_head_n_greater_than_rows(self, store: DatasetStore, sample_csv_path) -> None:
+        df = parse_file(sample_csv_path)
+        store.save("ds-1", "sales.csv", df)
+        head = store.head("ds-1", n=1000)
+        assert head.height == df.height  # capped at total
+
+    def test_head_n_zero(self, store: DatasetStore, sample_csv_path) -> None:
+        df = parse_file(sample_csv_path)
+        store.save("ds-1", "sales.csv", df)
+        head = store.head("ds-1", n=0)
+        assert head.height == 0
+        assert set(head.columns) == set(df.columns)
+
+    def test_head_negative_n_raises(self, store: DatasetStore, sample_csv_path) -> None:
+        df = parse_file(sample_csv_path)
+        store.save("ds-1", "sales.csv", df)
+        with pytest.raises(ValueError):
+            store.head("ds-1", n=-1)
+
+    def test_head_nonexistent_raises(self, store: DatasetStore) -> None:
+        with pytest.raises(KeyError):
+            store.head("does-not-exist", n=5)
+
+
+class TestDatasetStoreGetTableName:
+    """HIGH-2: get_table_name() is public, single round-trip, raises KeyError if missing."""
+
+    def test_returns_table_name(self, store: DatasetStore, sample_csv_path) -> None:
+        df = parse_file(sample_csv_path)
+        store.save("ds-1", "sales.csv", df)
+        name = store.get_table_name("ds-1")
+        assert name.startswith("data_")  # internal convention
+
+    def test_nonexistent_raises(self, store: DatasetStore) -> None:
+        with pytest.raises(KeyError, match="Dataset not found"):
+            store.get_table_name("does-not-exist")
+
+
 class TestDatasetStoreAggregate:
     @SKIP
     def test_aggregate_sum_by_x(self, store: DatasetStore, small_df) -> None:

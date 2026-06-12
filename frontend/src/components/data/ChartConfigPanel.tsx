@@ -6,13 +6,11 @@ import type { Aggregation, ChartType } from '../../types/api';
 import './ChartConfigPanel.css';
 
 const CHART_TYPES: { value: ChartType; label: string; enabled: boolean }[] = [
-  // CRITICAL-1 修复:M1 暂不接 ScatterChart / PieChart 组件,
-  // 但 makeScatterOption / makePieOption 工厂已实现(echarts-theme.ts)
-  // 等 M1.5 加 ScatterChart / PieChart 组件后,把 enabled 改 true 即可
   { value: 'bar', label: '柱状图', enabled: true },
   { value: 'line', label: '折线图', enabled: true },
-  { value: 'scatter', label: '散点图 (M1.5)', enabled: false },
-  { value: 'pie', label: '饼图 (M1.5)', enabled: false },
+  // M1.5 修复:ScatterChart / PieChart 组件已实现,dropdown 启用
+  { value: 'scatter', label: '散点图', enabled: true },
+  { value: 'pie', label: '饼图', enabled: true },
 ];
 
 const AGGREGATIONS: { value: Aggregation; label: string }[] = [

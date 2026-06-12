@@ -134,15 +134,17 @@ async def get_dataset(
     dataset_id: str,
     store: Annotated[DatasetStore, Depends(_get_store)],
 ) -> DatasetMeta:
-    """Return dataset metadata + first 5 sample rows."""
+    """Return dataset metadata + first 5 sample rows.
+
+    MED-3 修复:用 store.head(n=5) 代替 store.get_table() + .head(5),
+    避免 50MB 文件每次 GET 都全表扫。
+    """
     if not store.exists(dataset_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Dataset not found: {dataset_id}")
     meta = store.get_meta(dataset_id)
-    # Build a sample by loading the table (cheap for small datasets; in M1.5 we'll
-    # add a separate "load N rows" method to avoid full table scans for big data)
-    df = store.get_table(dataset_id)
+    df = store.head(dataset_id, n=5)  # LIMIT 5 under the hood
     fields = [FieldInfo(name=col, type=str(df[col].dtype)) for col in df.columns]
-    sample = df.head(5).to_dicts() if df.height > 0 else []
+    sample = df.to_dicts() if df.height > 0 else []
     return DatasetMeta(
         id=meta["id"],
         name=meta["name"],

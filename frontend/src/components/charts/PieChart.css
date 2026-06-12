@@ -1,0 +1,5 @@
+.pie-chart {
+  width: 100%;
+  height: var(--chart-height, 280px);
+  min-height: 120px;
+}
