@@ -7,20 +7,26 @@ import {
   LegendComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-import { THEME_NAME, registerDarkTheme } from '../../lib/echarts-theme';
+import { THEME_NAME, registerDarkTheme, makeBarOption } from '../../lib/echarts-theme';
+import type { ChartPreview } from '../../types/api';
 import './BarChart.css';
 
-echarts.use([EBarChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
-
-registerDarkTheme();
-
-export interface BarChartProps {
-  data: { categories: string[]; values: number[] };
-  height?: number;
-  showLegend?: boolean;
+let registered = false;
+function ensureRegistered() {
+  if (registered) return;
+  registered = true;
+  echarts.use([EBarChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
+  registerDarkTheme();
 }
 
-export function BarChart({ data, height = 280, showLegend = false }: BarChartProps) {
+export interface BarChartProps {
+  series: ChartPreview['series'];
+  height?: number;
+  ariaLabel?: string;
+}
+
+export function BarChart({ series, height = 280, ariaLabel = 'Bar chart' }: BarChartProps) {
+  ensureRegistered();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
 
@@ -29,7 +35,6 @@ export function BarChart({ data, height = 280, showLegend = false }: BarChartPro
     if (!el) return;
 
     chartRef.current = echarts.init(el, THEME_NAME, { renderer: 'canvas' });
-
     const ro = new ResizeObserver(() => chartRef.current?.resize());
     ro.observe(el);
 
@@ -42,57 +47,16 @@ export function BarChart({ data, height = 280, showLegend = false }: BarChartPro
 
   useEffect(() => {
     if (!chartRef.current) return;
-    chartRef.current.setOption(
-      {
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: { type: 'shadow', shadowStyle: { color: 'oklch(72% 0.18 230 / 0.08)' } },
-        },
-        legend: showLegend
-          ? { bottom: 0, icon: 'roundRect', itemWidth: 8, itemHeight: 8 }
-          : { show: false },
-        grid: { left: 40, right: 16, top: 16, bottom: showLegend ? 36 : 16, containLabel: true },
-        xAxis: {
-          type: 'category',
-          data: data.categories,
-        },
-        yAxis: {
-          type: 'value',
-          axisLabel: {
-            formatter: (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`),
-          },
-        },
-        series: [
-          {
-            name: 'Requests',
-            type: 'bar',
-            data: data.values,
-            barMaxWidth: 36,
-            itemStyle: {
-              borderRadius: [4, 4, 0, 0],
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'oklch(72% 0.18 230)' },
-                { offset: 1, color: 'oklch(55% 0.18 230)' },
-              ]),
-            },
-            emphasis: {
-              focus: 'series',
-              itemStyle: { color: 'oklch(78% 0.18 230)' },
-            },
-          },
-        ],
-      },
-      { notMerge: true },
-    );
-  }, [data, showLegend]);
+    chartRef.current.setOption(makeBarOption(series));
+  }, [series]);
 
   return (
     <div
       ref={containerRef}
       className="bar-chart"
-      style={{ height: `${height}px` }}
+      style={{ '--chart-height': `${height}px` } as React.CSSProperties}
       role="img"
-      aria-label="Bar chart"
+      aria-label={ariaLabel}
     />
   );
 }

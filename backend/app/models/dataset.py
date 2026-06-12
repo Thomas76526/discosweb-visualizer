@@ -35,7 +35,7 @@ class ChartSpec(BaseModel):
     x_field: str = Field(alias="xField")
     y_field: str = Field(alias="yField")
     group_by: str | None = Field(default=None, alias="groupBy")
-    aggregation: Literal["sum", "avg", "count", "min", "max"] | None = None
+    aggregation: Literal["sum", "avg", "count", "min", "max"] = "sum"
 
 
 class ChartSeries(BaseModel):

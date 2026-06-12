@@ -13,6 +13,13 @@
   font-family: var(--font-display);
 }
 
+.app-shell:has(.app-canvas--empty) {
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "topbar"
+    "canvas";
+}
+
 /* Topbar */
 .app-topbar {
   grid-area: topbar;
@@ -430,4 +437,41 @@
   margin-top: auto;
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);
+}
+/* M1.5 chart canvas */
+.canvas-chart {
+  padding: var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 420px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.canvas-empty p {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-canvas);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* Idle state (no dataset loaded) */
+.status-pill[data-tone="idle"] {
+  color: var(--text-muted);
+}
+.status-pill[data-tone="idle"] .status-dot {
+  background: var(--text-muted);
+  box-shadow: none;
 }

@@ -5,3 +5,11 @@ pydantic-settings>=2.2
 polars>=0.20
 duckdb>=0.10
 python-multipart>=0.0.9
+
+# Dev / test
+pytest>=7.4
+pytest-asyncio>=0.21
+pytest-cov>=4.1
+httpx>=0.25
+ruff>=0.3
+mypy>=1.8

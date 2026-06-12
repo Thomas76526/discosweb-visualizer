@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     # 运行时文件(DuckDB / 上传文件)在 ./data/runtime/  通过命名卷 db-data 挂入
     storage_dir: str = "./data/runtime"
     duckdb_path: str = "./data/runtime/visualizer.duckdb"
+    # F-05 修复:可配置的上传体积上限(MB)
+    max_upload_mb: int = 50
 
 
 settings = Settings()
