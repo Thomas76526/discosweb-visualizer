@@ -9,7 +9,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 
 from app.core.config import settings
-from app.models.dataset import DatasetMeta, DatasetProfile, FieldInfo
+from app.models.dataset import DatasetMeta, DatasetProfile, FieldInfo, FieldProfile
 from app.services.parser import allowed_extensions, parse_file
 from app.services.storage import DatasetStore
 
@@ -162,7 +162,11 @@ async def get_dataset_profile(
     """Return per-field statistics (nulls, distinct, min/max, top values)."""
     if not store.exists(dataset_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Dataset not found: {dataset_id}")
-    return DatasetProfile(fields=store.profile(dataset_id))
+    # Convert the loose dict type from store.profile() into the strict
+    # FieldProfile Pydantic model expected by the response_model
+    return DatasetProfile(
+        fields=[FieldProfile(**f) for f in store.profile(dataset_id)]
+    )
 
 
 @router.post(

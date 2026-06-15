@@ -132,7 +132,12 @@ class DatasetStore:
         arrow_table = self.conn.execute(
             f"SELECT * FROM {_quote(table_name)}"
         ).arrow()
-        return pl.from_arrow(arrow_table)
+        # pl.from_arrow may return DataFrame | Series; assert it's a DataFrame
+        result = pl.from_arrow(arrow_table)
+        if not isinstance(result, pl.DataFrame):
+            # Defensive: a single-column SELECT * shouldn't happen, but guard
+            raise TypeError(f"Expected DataFrame, got {type(result).__name__}")
+        return result
 
     def head(self, dataset_id: str, n: int = 5) -> pl.DataFrame:
         """Return the first `n` rows of the dataset (MED-3: avoid full table scan).
@@ -146,7 +151,10 @@ class DatasetStore:
         arrow_table = self.conn.execute(
             f"SELECT * FROM {_quote(table_name)} LIMIT {int(n)}"
         ).arrow()
-        return pl.from_arrow(arrow_table)
+        result = pl.from_arrow(arrow_table)
+        if not isinstance(result, pl.DataFrame):
+            raise TypeError(f"Expected DataFrame, got {type(result).__name__}")
+        return result
 
     # ---------------- profile ----------------
 
@@ -175,7 +183,12 @@ class DatasetStore:
                 FROM {_quote(table_name)}
                 """
             ).fetchone()
-            nulls, distinct, min_v, max_v = stats_row
+            # DuckDB fetchone() can return None for empty tables;
+            # coerce to a 4-tuple of zeros/None in that case.
+            if stats_row is None:
+                nulls, distinct, min_v, max_v = 0, 0, None, None
+            else:
+                nulls, distinct, min_v, max_v = stats_row
 
             entry: dict[str, Any] = {
                 "name": name,
