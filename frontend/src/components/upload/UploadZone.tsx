@@ -18,7 +18,7 @@ export function UploadZone() {
   const error = useDatasetStore((s) => s.error);
 
   const loadAndSet = useCallback(
-    async (loader: () => Promise<ReturnType<typeof loadSample>>) => {
+    async (loader: () => Promise<Awaited<ReturnType<typeof loadSample>>>) => {
       setLoading(true);
       setError(null);
       try {

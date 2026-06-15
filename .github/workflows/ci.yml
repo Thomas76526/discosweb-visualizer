@@ -63,9 +63,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        # 首次还没有 lockfile,改用 npm install;
-        # 等首次合并后再切 `npm ci`
-        run: npm install --no-audit --no-fund || npm ci
+        # package-lock.json 已生成,用 `npm ci` 获得可复现构建
+        run: npm ci --no-audit --no-fund
 
       - name: Type check
         run: npm run typecheck

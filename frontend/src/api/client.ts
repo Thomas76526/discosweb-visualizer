@@ -38,13 +38,18 @@ const DEFAULT_BASE = '/api';
 const DEFAULT_TIMEOUT = 30_000;
 
 function buildUrl(base: string, path: string, query?: RequestOptions['query']): string {
-  const url = new URL(path.startsWith('/') ? path : `/${path}`, base, 'http:');
-  if (query) {
-    for (const [k, v] of Object.entries(query)) {
-      if (v !== undefined) url.searchParams.set(k, String(v));
-    }
-  }
-  return `${url.pathname}${url.search}`;
+  // H-6 修复:不要用 new URL 3-arg 黑魔法,改用字符串拼接
+  // TS 5.6 收紧了 URL 构造签名,这写法在 strict 下过不了
+  const cleanBase = base.replace(/\/+$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const qs = query
+    ? '?' + new URLSearchParams(
+        Object.entries(query)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => [k, String(v)])
+      ).toString()
+    : '';
+  return `${cleanBase}${cleanPath}${qs}`;
 }
 
 export async function request<T>(

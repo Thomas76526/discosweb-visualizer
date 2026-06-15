@@ -1,7 +1,9 @@
 import { type HTMLAttributes, type ReactNode } from 'react';
 import './Card.css';
 
-export interface CardProps extends HTMLAttributes<HTMLElement> {
+export interface CardProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+  // title 在 HTMLAttributes 是 string,但 Card 想接受 ReactNode(可塞 <span> 等)
+  // 用 Omit 排除原生 title,自己定义
   title?: ReactNode;
   subtitle?: ReactNode;
   actions?: ReactNode;

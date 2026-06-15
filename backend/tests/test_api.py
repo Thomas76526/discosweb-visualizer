@@ -60,11 +60,9 @@ class TestUpload:
         # Override max size to a small value for the test
         monkeypatch.setenv("APP_MAX_UPLOAD_MB", "1")
         # Need to re-import or reset settings cache
-        from app.core.config import Settings
         # Recreate app
         from importlib import reload
         from app.services import storage as storage_mod
-        from main import app
         reload(storage_mod)
         # The Settings are loaded at import time; we have to work with what's set
         # For now, skip detailed test and just ensure the endpoint validates.

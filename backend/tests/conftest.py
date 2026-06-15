@@ -6,6 +6,8 @@ from typing import Iterator
 
 import pytest
 
+from app.services.storage import DatasetStore
+
 
 @pytest.fixture
 def sample_csv_path(tmp_path: Path) -> Path:
@@ -73,10 +75,8 @@ def unsafe_filename() -> str:
 
 
 @pytest.fixture
-def store(tmp_path: Path) -> Iterator["DatasetStore"]:
+def store(tmp_path: Path) -> Iterator[DatasetStore]:
     """In-memory DuckDB-backed DatasetStore for fast tests."""
-    from app.services.storage import DatasetStore
-
     s = DatasetStore(duckdb_path=tmp_path / "test.duckdb")
     yield s
     s.close()

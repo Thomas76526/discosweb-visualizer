@@ -72,7 +72,7 @@ async def upload_dataset(
 ) -> DatasetMeta:
     """Upload a CSV/JSON/Parquet file and persist it as a dataset."""
     safe_name = _sanitize_filename(file.filename)
-    ext = _validate_extension(safe_name)
+    _validate_extension(safe_name)  # raises 415 if not allowed; result not used
 
     # Stream the upload with a size cap (F-05: 防止巨型文件耗尽磁盘)
     max_bytes = _max_upload_bytes()
