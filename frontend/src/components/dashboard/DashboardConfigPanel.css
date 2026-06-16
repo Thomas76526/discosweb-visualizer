@@ -1,0 +1,139 @@
+.dash-config-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--space-3);
+  gap: var(--space-4);
+  overflow-y: auto;
+}
+
+.dash-config-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dash-config-heading {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin: 0;
+}
+
+.dash-config-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dash-config-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.dash-config-input {
+  padding: var(--space-2);
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-family: var(--font-display);
+  transition: border-color var(--duration-fast) var(--ease-out-expo);
+}
+
+.dash-config-input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.dash-config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.dash-config-actions > * {
+  flex: 1;
+}
+
+.dash-config-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.dash-config-id {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 1px 4px;
+  background: var(--bg-canvas);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+}
+
+.dash-config-list-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.dash-config-list-item {
+  background: var(--bg-surface);
+}
+
+.dash-config-list-item[data-active='true'] {
+  background: var(--accent-soft);
+}
+
+.dash-config-list-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out-expo);
+}
+
+.dash-config-list-btn:hover {
+  background: var(--bg-elevated);
+}
+
+.dash-config-list-name {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-config-list-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.dash-config-error {
+  padding: var(--space-2) var(--space-3);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}

@@ -6,14 +6,15 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import charts, datasets
+from app.api import charts, dashboards, datasets
 from app.core.config import settings
+from app.services.dashboard_store import DashboardStore
 from app.services.storage import DatasetStore
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """Initialize DuckDB-backed store on startup, release on shutdown."""
+    """Initialize DuckDB-backed store + SQLite dashboard store on startup."""
     # Resolve storage paths (env vars may override defaults)
     storage_dir = Path(settings.storage_dir)
     storage_dir.mkdir(parents=True, exist_ok=True)
@@ -21,13 +22,16 @@ async def lifespan(_: FastAPI):
     if duckdb_path.parent != Path("."):
         duckdb_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Build the store once and stash it on app.state for dependency injection
-    store = DatasetStore(duckdb_path=duckdb_path)
-    _.state.store = store  # type: ignore[attr-defined]
+    # Build the stores once and stash them on app.state for dependency injection
+    dataset_store = DatasetStore(duckdb_path=duckdb_path)
+    dashboard_store = DashboardStore(db_path=settings.dashboard_db_path)
+    _.state.store = dataset_store  # type: ignore[attr-defined]
+    _.state.dashboard_store = dashboard_store  # type: ignore[attr-defined]
     try:
         yield
     finally:
-        store.close()
+        dataset_store.close()
+        dashboard_store.close()
 
 
 app = FastAPI(
@@ -49,6 +53,9 @@ app.add_middleware(
 
 app.include_router(datasets.router, prefix="/api/datasets", tags=["datasets"])
 app.include_router(charts.router, prefix="/api/charts", tags=["charts"])
+app.include_router(
+    dashboards.router, prefix="/api/dashboards", tags=["dashboards"]
+)
 
 
 @app.get("/health", tags=["meta"])
