@@ -1,12 +1,20 @@
 """Pydantic models for datasets, fields, and chart specifications."""
+from __future__ import annotations
+
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-# H-08/H-09 修复:user-supplied identifier (列名 / dataset 名字) 的字面约束。
+# H-08/H-09 修复:user-supplied identifier (列名 / dataset id / 看板 id) 的字面约束。
 # 允许 ASCII 字母数字下划线 + 中文 (中文表头是真实业务需求) + dot(用于嵌套字段),
 # 长度 1-64,首字符必须是字母/下划线/中文(避免以数字开头的标识符)。
 _IDENT_PATTERN = r"^[A-Za-z_一-鿿][A-Za-z0-9_一-鿿.]{0,63}$"
+
+# Dataset / Dashboard 的 name 是用户提供的展示名 (可能含空格、中文、横线等),
+# 不能套 identifier 约束,只做长度 + 基础安全限制:
+#   - 长度 1-255
+#   - 拒 NULL / 控制字符
+_NAME_PATTERN = r"^[\x20-\x7e　-鿿一-鿿]{1,255}$"
 
 
 class FieldInfo(BaseModel):
@@ -16,7 +24,9 @@ class FieldInfo(BaseModel):
 
 class DatasetMeta(BaseModel):
     id: str
-    name: str = Field(..., pattern=_IDENT_PATTERN)
+    # name 是用户文件/数据集展示名("sample-sales-2025.csv"),不是 SQL identifier,
+    # 套 _NAME_PATTERN (允许空格 / 中文 / - / .),长度 1-255
+    name: str = Field(..., pattern=_NAME_PATTERN)
     rows: int
     fields: list[FieldInfo]
     sample: list[dict[str, Any]] = Field(default_factory=list)

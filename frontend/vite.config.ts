@@ -12,9 +12,11 @@ export default defineConfig({
     host: true,
     // F-04 修复:前端不再依赖 VITE_API_BASE 字面量,而是通过代理
     // 把 /api/* 转发到 backend 容器,避免与 CORS 互相耦合。
+    // VITE_API_TARGET env 允许本地开发指到非 docker host:port
+    // (docker compose 时默认 http://backend:8000;本地用 127.0.0.1:8765)
     proxy: {
       '/api': {
-        target: 'http://backend:8000',
+        target: process.env.VITE_API_TARGET || 'http://backend:8000',
         changeOrigin: true,
         secure: false,
       },

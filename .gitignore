@@ -67,3 +67,7 @@ tmp/
 data/runtime/*
 !data/runtime/.gitkeep
 
+# Smoke test 时误在 backend/ 下创建了 data/ 目录,清掉
+# (data 目录只应放在 repo 根,backend 不应有)
+backend/data/
+

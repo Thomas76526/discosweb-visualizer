@@ -59,5 +59,8 @@ class DashboardListItem(BaseModel):
     id: str = Field(..., pattern=SHORT_ID_PATTERN)
     name: str
     description: str
-    chart_count: int
+    # wire 上是 camelCase (chartCount) — 与 Dashboard 一致
+    chart_count: int = Field(..., alias="chartCount")
     updated_at: str
+
+    model_config = {"populate_by_name": True}

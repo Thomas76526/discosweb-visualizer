@@ -3,7 +3,9 @@ import { useMemo } from 'react';
 // components) into /legacy. New 1.5 API is hooks-based and ships in the main
 // entry; we use /legacy for stability until the hooks API is stable enough.
 import { ReactGridLayout, WidthProvider, type LayoutItem } from 'react-grid-layout/legacy';
-import 'react-grid-layout/legacy/css/styles.css';
+// CSS lives in the root /css subpath (exposed via package.json exports).
+// 1.5+ doesn't re-export the CSS from /legacy.
+import 'react-grid-layout/css/styles.css';
 import { useDashboardStore } from '../../store/dashboard';
 import { ChartCard } from './ChartCard';
 import './DashboardCanvas.css';

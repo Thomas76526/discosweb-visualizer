@@ -4,6 +4,7 @@ pydantic>=2.6
 pydantic-settings>=2.2
 polars>=0.20
 duckdb>=0.10
+pyarrow>=14.0
 python-multipart>=0.0.9
 
 # Dev / test

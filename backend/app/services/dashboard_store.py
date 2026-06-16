@@ -43,6 +43,9 @@ class DashboardStore:
         # check_same_thread=False because FastAPI may use a thread pool
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
+        # SQLite requires per-connection FK enforcement; default is OFF.
+        # Without this, ON DELETE CASCADE is a no-op and child rows survive parent deletes.
+        self.conn.execute("PRAGMA foreign_keys = ON")
         self._lock = threading.Lock()
         self._init_schema()
 
@@ -197,6 +200,12 @@ class DashboardStore:
 
     def delete(self, dash_id: str) -> None:
         with self._lock:
+            # Check existence first — explicit is better than silent no-op
+            existing = self.conn.execute(
+                "SELECT 1 FROM dashboards WHERE id = ?", [dash_id]
+            ).fetchone()
+            if existing is None:
+                raise KeyError(f"Dashboard not found: {dash_id}")
             self.conn.execute("DELETE FROM dashboards WHERE id = ?", [dash_id])
             self.conn.commit()
 

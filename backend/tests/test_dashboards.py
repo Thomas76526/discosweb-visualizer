@@ -19,9 +19,10 @@ def store(tmp_path) -> DashboardStore:
 
 
 def _chart(*, ordinal: int = 0, chart_id: str | None = None) -> ChartItem:
+    # 标识符模式要求"字母/下划线/中文"开头,所以 chart_id / dataset_id 用合法前缀
     return ChartItem(
-        id=chart_id or f"ch-{ordinal}",
-        dataset_id="ds-abc",
+        id=chart_id or f"ch_{ordinal}",
+        dataset_id="ds_abc",
         chart_type="bar",
         x_field="region",
         y_field="revenue",
@@ -56,15 +57,15 @@ class TestDashboardStoreLifecycle:
     def test_create_returns_dashboard_with_short_id(self, store: DashboardStore) -> None:
         d = store.create(
             DashboardCreate(
-                name="My first dashboard",
-                description="overview of 2025",
-                charts=[_chart(0)],
+                name="My_first_dashboard",
+                description="overview_of_2025",
+                charts=[_chart(ordinal=0)],
             )
         )
         assert len(d.id) == 6
         assert d.id.islower()
-        assert d.name == "My first dashboard"
-        assert d.description == "overview of 2025"
+        assert d.name == "My_first_dashboard"
+        assert d.description == "overview_of_2025"
         assert len(d.charts) == 1
 
     def test_create_idempotent_short_ids(self, store: DashboardStore) -> None:
@@ -74,9 +75,9 @@ class TestDashboardStoreLifecycle:
         assert d1.id != d2.id
 
     def test_create_persists_charts_in_order(self, store: DashboardStore) -> None:
-        charts = [_chart(ordinal=i, chart_id=f"ch-{i}") for i in range(3)]
+        charts = [_chart(ordinal=i, chart_id=f"ch_{i}") for i in range(3)]
         d = store.create(DashboardCreate(name="ordered", charts=charts))
-        assert [c.id for c in d.charts] == ["ch-0", "ch-1", "ch-2"]
+        assert [c.id for c in d.charts] == ["ch_0", "ch_1", "ch_2"]
 
 
 class TestDashboardStoreGet:
@@ -93,7 +94,7 @@ class TestDashboardStoreGet:
 
 class TestDashboardStoreList:
     def test_list_includes_chart_count(self, store: DashboardStore) -> None:
-        d1 = store.create(DashboardCreate(name="a", charts=[_chart(0), _chart(1)]))
+        d1 = store.create(DashboardCreate(name="a", charts=[_chart(ordinal=0), _chart(ordinal=1)]))
         d2 = store.create(DashboardCreate(name="b", charts=[]))
         items = store.list()
         assert len(items) == 2
@@ -107,13 +108,13 @@ class TestDashboardStoreList:
 
 class TestDashboardStoreUpdate:
     def test_update_replaces_charts(self, store: DashboardStore) -> None:
-        d = store.create(DashboardCreate(name="orig", charts=[_chart(0)]))
+        d = store.create(DashboardCreate(name="orig", charts=[_chart(ordinal=0)]))
         store.update(
             d.id,
             DashboardCreate(
                 name="updated",
                 description="new desc",
-                charts=[_chart(0), _chart(1), _chart(2)],
+                charts=[_chart(ordinal=0), _chart(ordinal=1), _chart(ordinal=2)],
             ),
         )
         fetched = store.get(d.id)
@@ -140,18 +141,18 @@ class TestDashboardStoreUpdate:
 
 class TestDashboardStoreDelete:
     def test_delete_existing(self, store: DashboardStore) -> None:
-        d = store.create(DashboardCreate(name="x", charts=[_chart(0)]))
+        d = store.create(DashboardCreate(name="x", charts=[_chart(ordinal=0)]))
         store.delete(d.id)
         with pytest.raises(KeyError):
             store.get(d.id)
 
     def test_delete_cascades_charts(self, store: DashboardStore) -> None:
-        d = store.create(DashboardCreate(name="x", charts=[_chart(0), _chart(1)]))
+        d = store.create(DashboardCreate(name="x", charts=[_chart(ordinal=0), _chart(ordinal=1)]))
         store.delete(d.id)
         # CASCADE should have removed the chart rows
         # (indirectly verifiable: a new dashboard with the same chart ids works)
         d2 = store.create(
-            DashboardCreate(name="y", charts=[_chart(0, chart_id="ch-0")])
+            DashboardCreate(name="y", charts=[_chart(ordinal=0, chart_id="ch_0")])
         )
         assert d2.id != d.id
 
